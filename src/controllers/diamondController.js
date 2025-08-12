@@ -1,4 +1,4 @@
-const Product = require('../models/productModel');
+const Diamond = require('../models/diamondModel');
 const { AppError } = require('../utils/errorHandler');
 
 // Create a new diamond
@@ -25,16 +25,33 @@ exports.createDiamond = async (req, res, next) => {
       Polish
     } = req.body;
 
-    // Create new diamond with categoryName as 'diamond'
-    const newDiamond = await Product.create({
+    // Process images - extract URLs from objects if they come as objects
+    let processedImages = [];
+    if (images) {
+      if (Array.isArray(images)) {
+        processedImages = images.map(image => {
+          // If image is an object with url property, extract the url
+          if (typeof image === 'object' && image.url) {
+            return image.url;
+          }
+          // If image is already a string, use it as-is
+          return typeof image === 'string' ? image : '';
+        }).filter(url => url); // Remove empty strings
+      } else if (typeof images === 'string') {
+        // Handle case where images might be a single string
+        processedImages = [images];
+      }
+    }
+
+    // Create new diamond
+    const newDiamond = await Diamond.create({
       name,
       sku,
-      categoryName: 'diamond',
       size,
       stock,
       regularPrice,
       salePrice,
-      images,
+      images: processedImages,
       videoUrl,
       description,
       discount: discount || 0,
@@ -63,7 +80,7 @@ exports.createDiamond = async (req, res, next) => {
 exports.getAllDiamonds = async (req, res, next) => {
   try {
     // Build query for diamonds only
-    const queryObj = { categoryName: 'diamond', ...req.query };
+    const queryObj = { ...req.query };
     const excludedFields = ['page', 'sort', 'limit', 'fields'];
     excludedFields.forEach(el => delete queryObj[el]);
 
@@ -71,7 +88,7 @@ exports.getAllDiamonds = async (req, res, next) => {
     let queryStr = JSON.stringify(queryObj);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, match => `$${match}`);
 
-    let query = Product.find(JSON.parse(queryStr));
+    let query = Diamond.find(JSON.parse(queryStr));
 
     // Sorting
     if (req.query.sort) {
@@ -114,10 +131,7 @@ exports.getAllDiamonds = async (req, res, next) => {
 // Get diamond by ID
 exports.getDiamondById = async (req, res, next) => {
   try {
-    const diamond = await Product.findOne({
-      _id: req.params.id,
-      categoryName: 'diamond'
-    });
+    const diamond = await Diamond.findById(req.params.id);
 
     if (!diamond) {
       return next(new AppError('No diamond found with that ID', 404));
@@ -137,8 +151,8 @@ exports.getDiamondById = async (req, res, next) => {
 // Update diamond
 exports.updateDiamond = async (req, res, next) => {
   try {
-    const diamond = await Product.findOneAndUpdate(
-      { _id: req.params.id, categoryName: 'diamond' },
+    const diamond = await Diamond.findByIdAndUpdate(
+      req.params.id,
       req.body,
       {
         new: true,
@@ -164,10 +178,7 @@ exports.updateDiamond = async (req, res, next) => {
 // Delete diamond
 exports.deleteDiamond = async (req, res, next) => {
   try {
-    const diamond = await Product.findOneAndDelete({
-      _id: req.params.id,
-      categoryName: 'diamond'
-    });
+    const diamond = await Diamond.findByIdAndDelete(req.params.id);
 
     if (!diamond) {
       return next(new AppError('No diamond found with that ID', 404));
@@ -182,69 +193,3 @@ exports.deleteDiamond = async (req, res, next) => {
   }
 };
 
-// Get diamonds by price range
-exports.getDiamondsByPriceRange = async (req, res, next) => {
-  try {
-    const { minPrice, maxPrice } = req.query;
-
-    let priceFilter = { categoryName: 'diamond' };
-    
-    if (minPrice || maxPrice) {
-      priceFilter.salePrice = {};
-      if (minPrice) priceFilter.salePrice.$gte = parseFloat(minPrice);
-      if (maxPrice) priceFilter.salePrice.$lte = parseFloat(maxPrice);
-    }
-
-    const diamonds = await Product.find(priceFilter).sort('salePrice');
-
-    res.status(200).json({
-      status: 'success',
-      results: diamonds.length,
-      data: {
-        diamonds
-      }
-    });
-  } catch (error) {
-    next(new AppError(error.message, 400));
-  }
-};
-
-// Get best seller diamonds
-exports.getBestSellerDiamonds = async (req, res, next) => {
-  try {
-    const diamonds = await Product.find({
-      categoryName: 'diamond',
-      bestSeller: true
-    }).sort('-createdAt').limit(20);
-
-    res.status(200).json({
-      status: 'success',
-      results: diamonds.length,
-      data: {
-        diamonds
-      }
-    });
-  } catch (error) {
-    next(new AppError(error.message, 400));
-  }
-};
-
-// Get diamonds on sale
-exports.getOnSaleDiamonds = async (req, res, next) => {
-  try {
-    const diamonds = await Product.find({
-      categoryName: 'diamond',
-      discount: { $gt: 0 }
-    }).sort('-discount');
-
-    res.status(200).json({
-      status: 'success',
-      results: diamonds.length,
-      data: {
-        diamonds
-      }
-    });
-  } catch (error) {
-    next(new AppError(error.message, 400));
-  }
-};

@@ -1,26 +1,26 @@
 const express = require('express');
 const diamondController = require('../controllers/diamondController');
 const authMiddleware = require('../middlewares/authMiddleware');
+const fileUploadMiddleware = require('../middlewares/publicFileUploadMiddleware');
 
 const router = express.Router();
 
 // Public routes
 router.get('/', diamondController.getAllDiamonds);
-router.get('/price-range', diamondController.getDiamondsByPriceRange);
-router.get('/best-sellers', diamondController.getBestSellerDiamonds);
-router.get('/on-sale', diamondController.getOnSaleDiamonds);
 router.get('/:id', diamondController.getDiamondById);
 
 // Protected routes (require authentication)
 router.post(
   '/',
   authMiddleware.protect,
+  fileUploadMiddleware.uploadProductFiles,
   diamondController.createDiamond
 );
 
 router.patch(
   '/:id',
   authMiddleware.protect,
+  fileUploadMiddleware.uploadProductFiles,
   diamondController.updateDiamond
 );
 

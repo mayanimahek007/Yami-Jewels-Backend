@@ -158,7 +158,7 @@ const uploadProductFiles = (req, res, next) => {
             return next(new AppError(`File ${file.originalname} is not a valid image. Only jpeg, jpg, png, gif, and webp are allowed.`, 400));
           }
 
-          // Save file to disk
+          // Save file to disk in public/images
           const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
           const filename = 'image-' + uniqueSuffix + path.extname(file.originalname);
           const filepath = path.join(imagesDir, filename);
