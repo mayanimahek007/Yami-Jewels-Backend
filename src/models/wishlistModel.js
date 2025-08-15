@@ -8,8 +8,11 @@ const wishlistSchema = new mongoose.Schema({
   },
   product: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product',
-    required: [true, 'Wishlist must contain a product']
+    ref: 'Product'
+  },
+  diamond: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'Diamond'
   },
   createdAt: {
     type: Date,
@@ -17,8 +20,9 @@ const wishlistSchema = new mongoose.Schema({
   }
 });
 
-// Compound index to ensure a user can only wishlist a product once
-wishlistSchema.index({ user: 1, product: 1 }, { unique: true });
+// Compound index to ensure a user can only wishlist a product or diamond once
+wishlistSchema.index({ user: 1, product: 1 }, { unique: true, partialFilterExpression: { product: { $exists: true } } });
+wishlistSchema.index({ user: 1, diamond: 1 }, { unique: true, partialFilterExpression: { diamond: { $exists: true } } });
 
 const Wishlist = mongoose.model('Wishlist', wishlistSchema);
 

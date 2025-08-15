@@ -286,6 +286,12 @@ exports.getProduct = async (req, res, next) => {
       return next(new AppError('No product found with that ID', 404));
     }
 
+    // Get reviews for this product
+    const reviews = await require('../models/reviewModel').find({ product: product._id })
+      .populate('user', 'name')
+      .sort('-createdAt')
+      .limit(10);
+
     // If user is logged in, check if product is in their wishlist
     if (req.user) {
       const wishlistItem = await Wishlist.findOne({
@@ -295,6 +301,7 @@ exports.getProduct = async (req, res, next) => {
 
       const productObj = product.toObject();
       productObj.isWishlisted = !!wishlistItem;
+      productObj.reviews = reviews;
 
       return res.status(200).json({
         status: 'success',
@@ -304,10 +311,13 @@ exports.getProduct = async (req, res, next) => {
       });
     }
 
+    const productObj = product.toObject();
+    productObj.reviews = reviews;
+
     res.status(200).json({
       status: 'success',
       data: {
-        product
+        product: productObj
       }
     });
   } catch (error) {

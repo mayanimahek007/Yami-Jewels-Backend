@@ -6,6 +6,8 @@ const connectDB = require('./config/database');
 const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
 const diamondRoutes = require('./routes/diamondRoutes');
+const newsletterRoutes = require('./routes/newsletterRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
 
 // Initialize express app
 const app = express();
@@ -23,6 +25,8 @@ app.use('/public', express.static('public'));
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/diamonds', diamondRoutes);
+app.use('/api/news', newsletterRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // Default route
 app.get('/', (req, res) => {
