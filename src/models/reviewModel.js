@@ -29,13 +29,7 @@ const reviewSchema = new mongoose.Schema({
     trim: true,
     maxlength: [1000, 'Review comment cannot exceed 1000 characters']
   },
-  images: [{
-    url: {
-      type: String,
-      required: [true, 'Please provide image URL']
-    },
-    alt: String
-  }],
+  images: [String],
   verified: {
     type: Boolean,
     default: false
@@ -66,40 +60,73 @@ reviewSchema.pre('save', function(next) {
 
 // Static method to calculate average rating
 reviewSchema.statics.calcAverageRatings = async function(productId) {
-  const stats = await this.aggregate([
-    {
-      $match: { product: productId }
-    },
-    {
-      $group: {
-        _id: '$product',
-        nRating: { $sum: 1 },
-        avgRating: { $avg: '$rating' }
+  try {
+    const stats = await this.aggregate([
+      {
+        $match: { product: productId }
+      },
+      {
+        $group: {
+          _id: '$product',
+          nRating: { $sum: 1 },
+          avgRating: { $avg: '$rating' }
+        }
       }
-    }
-  ]);
+    ]);
 
-  if (stats.length > 0) {
-    await mongoose.model('Product').findByIdAndUpdate(productId, {
-      ratingsQuantity: stats[0].nRating,
-      ratingsAverage: stats[0].avgRating
-    });
-  } else {
-    await mongoose.model('Product').findByIdAndUpdate(productId, {
-      ratingsQuantity: 0,
-      ratingsAverage: 4.5
-    });
+    if (stats.length > 0) {
+      await mongoose.model('Product').findByIdAndUpdate(productId, {
+        ratingsQuantity: stats[0].nRating,
+        ratingsAverage: Math.round(stats[0].avgRating * 10) / 10
+      });
+    } else {
+      await mongoose.model('Product').findByIdAndUpdate(productId, {
+        ratingsQuantity: 0,
+        ratingsAverage: 4.5
+      });
+    }
+  } catch (error) {
+    console.error('Error calculating average ratings:', error);
   }
 };
 
 // Call calcAverageRatings after save
 reviewSchema.post('save', function() {
-  this.constructor.calcAverageRatings(this.product);
+  if (this.product) {
+    this.constructor.calcAverageRatings(this.product);
+  }
 });
 
-// Call calcAverageRatings after remove
-reviewSchema.post('remove', function() {
-  this.constructor.calcAverageRatings(this.product);
+// Call calcAverageRatings after deleteOne and deleteMany
+reviewSchema.post('deleteOne', { document: true, query: false }, function() {
+  if (this.product) {
+    this.constructor.calcAverageRatings(this.product);
+  }
+});
+
+reviewSchema.post('deleteMany', { document: true, query: false }, function(docs) {
+  if (docs && docs.length > 0) {
+    const productIds = [...new Set(docs.map(doc => doc.product))];
+    productIds.forEach(productId => {
+      this.constructor.calcAverageRatings(productId);
+    });
+  }
+});
+
+// Handle findOneAndDelete, findOneAndUpdate, and findOneAndRemove
+reviewSchema.post(/^findOneAnd/, async function(doc) {
+  if (doc && doc.product) {
+    await doc.constructor.calcAverageRatings(doc.product);
+  }
+});
+
+// Handle updateMany and deleteMany operations
+reviewSchema.post('updateMany', async function() {
+  // For updateMany, we need to find affected products
+  const affectedProducts = await this.model.distinct('product', this.getQuery());
+  affectedProducts.forEach(productId => {
+    this.model.calcAverageRatings(productId);
+  });
 });
 
 const Review = mongoose.model('Review', reviewSchema);

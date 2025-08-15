@@ -2,6 +2,7 @@ const express = require('express');
 const reviewController = require('../controllers/reviewController');
 const authMiddleware = require('../middlewares/authMiddleware');
 const reviewValidation = require('../middlewares/reviewValidationMiddleware');
+const { handleReviewImages } = require('../middlewares/reviewImageUploadMiddleware');
 
 const router = express.Router();
 
@@ -16,8 +17,8 @@ router.use(authMiddleware.protect);
 router.get('/me', reviewController.getMyReviews);
 
 // Create, update, and delete reviews
-router.post('/', reviewValidation.validateReviewCreate, reviewController.createReview);
-router.patch('/:id', reviewValidation.validateReviewId, reviewValidation.validateReviewUpdate, reviewController.updateReview);
+router.post('/', handleReviewImages, reviewValidation.validateReviewCreate, reviewController.createReview);
+router.patch('/:id', handleReviewImages, reviewValidation.validateReviewId, reviewValidation.validateReviewUpdate, reviewController.updateReview);
 router.delete('/:id', reviewValidation.validateReviewId, reviewController.deleteReview);
 
 // Mark review as helpful

@@ -5,7 +5,7 @@ const { AppError } = require('../utils/errorHandler');
 // Create a new review
 exports.createReview = async (req, res, next) => {
   try {
-    const { product, rating, title, comment, images } = req.body;
+    const { product, rating, title, comment } = req.body;
 
     // Check if product exists
     const productExists = await Product.findById(product);
@@ -23,6 +23,12 @@ exports.createReview = async (req, res, next) => {
       return next(new AppError('You have already reviewed this product', 400));
     }
 
+    // Handle uploaded images
+    let images = [];
+    if (req.files && req.files.length > 0) {
+      images = req.files.map(file => `/images/${file.filename}`);
+    }
+
     // Create new review
     const newReview = await Review.create({
       product,
@@ -30,7 +36,7 @@ exports.createReview = async (req, res, next) => {
       rating,
       title,
       comment,
-      images: images || []
+      images
     });
 
     // Populate user data
