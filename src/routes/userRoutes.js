@@ -12,6 +12,7 @@ router.post('/logout', userController.logout);
 router.post('/forgotPassword', validationMiddleware.validateForgotPassword, userController.forgotPassword);
 router.post('/verifyOTP', userController.verifyOTP);
 router.post('/resetPassword', validationMiddleware.validatePasswordReset, userController.resetPassword);
+router.post('/resendOTP', userController.resendOTP);
 
 // Protected routes (require authentication)
 router.use(authMiddleware.protect);

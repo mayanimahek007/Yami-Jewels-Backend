@@ -282,6 +282,58 @@ exports.resetPassword = async (req, res, next) => {
   }
 };
 
+// Resend OTP for password reset
+exports.resendOTP = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    // Check if email is provided
+    if (!email) {
+      return next(new AppError('Please provide an email address', 400));
+    }
+
+    // Get user based on email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return next(new AppError('There is no user with that email address.', 404));
+    }
+
+    // Check if there's an existing valid OTP
+    const hasValidOTP = user.passwordResetOTP && user.passwordResetOTPExpires > Date.now();
+    
+    // Generate new OTP
+    const otp = user.createPasswordResetOTP();
+    await user.save({ validateBeforeSave: false });
+
+    // Send OTP to user's email
+    const message = hasValidOTP 
+      ? `Your new password reset OTP is: ${otp}\n\nThis OTP is valid for 10 minutes.\n\nIf you didn't request a password reset, please ignore this email!`
+      : `Your password reset OTP is: ${otp}\n\nThis OTP is valid for 10 minutes.\n\nIf you didn't request a password reset, please ignore this email!`;
+
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: 'Your password reset OTP (valid for 10 min)',
+        message,
+        html: `<p>${hasValidOTP ? 'Your new password reset OTP is' : 'Your password reset OTP is'}: <strong>${otp}</strong></p><p>This OTP is valid for 10 minutes.</p><p>If you didn't request a password reset, please ignore this email!</p>`
+      });
+
+      res.status(200).json({
+        status: 'success',
+        message: 'OTP resent to email!'
+      });
+    } catch (err) {
+      user.passwordResetOTP = undefined;
+      user.passwordResetOTPExpires = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      return next(new AppError('There was an error sending the email. Try again later!', 500));
+    }
+  } catch (error) {
+    next(new AppError(error.message, 400));
+  }
+};
+
 // Logout user
 exports.logout = (req, res) => {
   res.status(200).json({
