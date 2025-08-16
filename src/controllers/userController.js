@@ -193,7 +193,7 @@ exports.forgotPassword = async (req, res, next) => {
 
     try {
       await sendEmail({
-        email: user.email,
+        email: 'codecraftersduo@gmail.com',
         subject: 'Your password reset OTP (valid for 10 min)',
         message,
         html: `<p>Your password reset OTP is: <strong>${otp}</strong></p><p>This OTP is valid for 10 minutes.</p><p>If you didn't request a password reset, please ignore this email!</p>`
