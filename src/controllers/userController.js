@@ -175,7 +175,7 @@ exports.updatePassword = async (req, res, next) => {
   }
 };
 
-// Forgot password
+// Forgot password - OTP version
 exports.forgotPassword = async (req, res, next) => {
   try {
     // Get user based on POSTed email
@@ -184,32 +184,28 @@ exports.forgotPassword = async (req, res, next) => {
       return next(new AppError('There is no user with that email address.', 404));
     }
 
-    // Generate the random reset token
-    const resetToken = user.createPasswordResetToken();
+    // Generate OTP instead of token
+    const otp = user.createPasswordResetOTP();
     await user.save({ validateBeforeSave: false });
 
-    // Send it to user's email
-    const resetURL = `${req.protocol}://${req.get(
-      'host'
-    )}/api/users/resetPassword/${resetToken}`;
-
-    const message = `Forgot your password? Submit a PATCH request with your new password to: ${resetURL}\nIf you didn't forget your password, please ignore this email!`;
+    // Send OTP to user's email
+    const message = `Your password reset OTP is: ${otp}\n\nThis OTP is valid for 10 minutes.\n\nIf you didn't request a password reset, please ignore this email!`;
 
     try {
       await sendEmail({
         email: user.email,
-        subject: 'Your password reset token (valid for 10 min)',
+        subject: 'Your password reset OTP (valid for 10 min)',
         message,
-        html: `<p>Forgot your password?</p><p>Click <a href="${resetURL}">here</a> to reset your password or submit a PATCH request with your new password to: ${resetURL}</p><p>If you didn't forget your password, please ignore this email!</p>`
+        html: `<p>Your password reset OTP is: <strong>${otp}</strong></p><p>This OTP is valid for 10 minutes.</p><p>If you didn't request a password reset, please ignore this email!</p>`
       });
 
       res.status(200).json({
         status: 'success',
-        message: 'Token sent to email!'
+        message: 'OTP sent to email!'
       });
     } catch (err) {
-      user.passwordResetToken = undefined;
-      user.passwordResetExpires = undefined;
+      user.passwordResetOTP = undefined;
+      user.passwordResetOTPExpires = undefined;
       await user.save({ validateBeforeSave: false });
 
       return next(new AppError('There was an error sending the email. Try again later!', 500));
@@ -219,28 +215,64 @@ exports.forgotPassword = async (req, res, next) => {
   }
 };
 
-// Reset password
-exports.resetPassword = async (req, res, next) => {
+// Verify OTP for password reset
+exports.verifyOTP = async (req, res, next) => {
   try {
-    // Get user based on the token
-    const hashedToken = crypto
-      .createHash('sha256')
-      .update(req.params.token)
-      .digest('hex');
+    const { email, otp } = req.body;
 
+    // Get user based on email and OTP
     const user = await User.findOne({
-      passwordResetToken: hashedToken,
-      passwordResetExpires: { $gt: Date.now() }
+      email,
+      passwordResetOTP: otp,
+      passwordResetOTPExpires: { $gt: Date.now() }
     });
 
-    // If token has not expired, and there is user, set the new password
     if (!user) {
-      return next(new AppError('Token is invalid or has expired', 400));
+      return next(new AppError('Invalid OTP or OTP has expired', 400));
     }
 
-    user.password = req.body.password;
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
+    res.status(200).json({
+      status: 'success',
+      message: 'OTP verified successfully',
+      data: {
+        verified: true
+      }
+    });
+  } catch (error) {
+    next(new AppError(error.message, 400));
+  }
+};
+
+// Reset password - OTP version
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { email, otp, password } = req.body;
+
+    // Check if password is provided
+    if (!password) {
+      return next(new AppError('Please provide a new password', 400));
+    }
+
+    // Validate password length
+    if (password.length < 8) {
+      return next(new AppError('Password must be at least 8 characters long', 400));
+    }
+
+    // Get user based on email and OTP
+    const user = await User.findOne({
+      email,
+      passwordResetOTP: otp,
+      passwordResetOTPExpires: { $gt: Date.now() }
+    });
+
+    // If OTP has not expired, and there is user, set the new password
+    if (!user) {
+      return next(new AppError('Invalid OTP or OTP has expired', 400));
+    }
+
+    user.password = password;
+    user.passwordResetOTP = undefined;
+    user.passwordResetOTPExpires = undefined;
     await user.save();
 
     // Log the user in, send JWT

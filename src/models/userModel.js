@@ -37,6 +37,8 @@ const userSchema = new mongoose.Schema({
   },
   passwordResetToken: String,
   passwordResetExpires: Date,
+  passwordResetOTP: String,
+  passwordResetOTPExpires: Date,
   createdAt: {
     type: Date,
     default: Date.now
@@ -71,6 +73,17 @@ userSchema.methods.createPasswordResetToken = function() {
   this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
 
   return resetToken;
+};
+
+// Generate OTP for password reset
+userSchema.methods.createPasswordResetOTP = function() {
+  // Generate 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  
+  this.passwordResetOTP = otp;
+  this.passwordResetOTPExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+  
+  return otp;
 };
 
 const User = mongoose.model('User', userSchema);

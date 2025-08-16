@@ -10,7 +10,8 @@ router.post('/register', validationMiddleware.validateRegister, userController.r
 router.post('/login', validationMiddleware.validateLogin, userController.login);
 router.post('/logout', userController.logout);
 router.post('/forgotPassword', validationMiddleware.validateForgotPassword, userController.forgotPassword);
-router.patch('/resetPassword/:token', validationMiddleware.validatePasswordReset, userController.resetPassword);
+router.post('/verifyOTP', userController.verifyOTP);
+router.post('/resetPassword', validationMiddleware.validatePasswordReset, userController.resetPassword);
 
 // Protected routes (require authentication)
 router.use(authMiddleware.protect);
