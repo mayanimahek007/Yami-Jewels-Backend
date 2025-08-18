@@ -13,12 +13,11 @@ exports.createReview = async (req, res, next) => {
       return next(new AppError('No product found with that ID', 404));
     }
 
-    // Check if user has already reviewed this product
+    // Check if user already reviewed this product
     const existingReview = await Review.findOne({
       product,
-      user: req.user._id
+      user: req.user._id,
     });
-
     if (existingReview) {
       return next(new AppError('You have already reviewed this product', 400));
     }
@@ -26,7 +25,7 @@ exports.createReview = async (req, res, next) => {
     // Handle uploaded images
     let images = [];
     if (req.files && req.files.length > 0) {
-      images = req.files.map(file => `/images/${file.filename}`);
+      images = req.files.map((file) => `/images/${file.filename}`);
     }
 
     // Create new review
@@ -36,7 +35,7 @@ exports.createReview = async (req, res, next) => {
       rating,
       title,
       comment,
-      images
+      images,
     });
 
     // Populate user data
@@ -44,35 +43,28 @@ exports.createReview = async (req, res, next) => {
 
     res.status(201).json({
       status: 'success',
-      data: {
-        review: newReview
-      }
+      data: { review: newReview },
     });
   } catch (error) {
     next(new AppError(error.message, 400));
   }
 };
 
-// Get all reviews for a product
+// ✅ Get all reviews across all products
 exports.getAllReviews = async (req, res, next) => {
   try {
-    const { productId } = req.params;
-    
-    // Check if product exists
-    const product = await Product.findById(productId);
-    if (!product) {
-      return next(new AppError('No product found with that ID', 404));
-    }
+    const queryObj = {};
 
-    // Build query
-    const queryObj = { product: productId };
-    
-    // Filter by rating if provided
+    if (req.query.productId) {
+      queryObj.product = req.query.productId;
+    }
     if (req.query.rating) {
-      queryObj.rating = parseInt(req.query.rating);
+      queryObj.rating = Number(req.query.rating);
     }
 
-    let query = Review.find(queryObj).populate('user', 'name');
+    let query = Review.find(queryObj)
+      .populate('user', 'name')
+      .populate('product', 'name images');
 
     // Sorting
     if (req.query.sort) {
@@ -83,24 +75,52 @@ exports.getAllReviews = async (req, res, next) => {
     }
 
     // Pagination
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-
     query = query.skip(skip).limit(limit);
 
     const reviews = await query;
-
-    // Get total count for pagination
     const totalReviews = await Review.countDocuments(queryObj);
 
     res.status(200).json({
       status: 'success',
       results: reviews.length,
       total: totalReviews,
-      data: {
-        reviews
-      }
+      currentPage: page,
+      totalPages: Math.ceil(totalReviews / limit),
+      data: { reviews },
+    });
+  } catch (error) {
+    next(new AppError(error.message, 400));
+  }
+};
+
+// ✅ Get all reviews for a specific product
+exports.getProductReviews = async (req, res, next) => {
+  try {
+    const { productId } = req.params;
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return next(new AppError('No product found with that ID', 404));
+    }
+
+    const queryObj = { product: productId };
+    if (req.query.rating) {
+      queryObj.rating = Number(req.query.rating);
+    }
+
+    let query = Review.find(queryObj).populate('user', 'name').sort('-createdAt');
+
+    const reviews = await query;
+    const total = await Review.countDocuments(queryObj);
+
+    res.status(200).json({
+      status: 'success',
+      results: reviews.length,
+      total,
+      data: { reviews },
     });
   } catch (error) {
     next(new AppError(error.message, 400));
@@ -111,16 +131,13 @@ exports.getAllReviews = async (req, res, next) => {
 exports.getReview = async (req, res, next) => {
   try {
     const review = await Review.findById(req.params.id).populate('user', 'name');
-
     if (!review) {
       return next(new AppError('No review found with that ID', 404));
     }
 
     res.status(200).json({
       status: 'success',
-      data: {
-        review
-      }
+      data: { review },
     });
   } catch (error) {
     next(new AppError(error.message, 400));
@@ -135,21 +152,16 @@ exports.updateReview = async (req, res, next) => {
     const review = await Review.findOneAndUpdate(
       { _id: req.params.id, user: req.user._id },
       { rating, title, comment, images, updatedAt: Date.now() },
-      {
-        new: true,
-        runValidators: true
-      }
+      { new: true, runValidators: true }
     );
 
     if (!review) {
-      return next(new AppError('No review found with that ID or you are not authorized to update it', 404));
+      return next(new AppError('No review found with that ID or you are not authorized', 404));
     }
 
     res.status(200).json({
       status: 'success',
-      data: {
-        review
-      }
+      data: { review },
     });
   } catch (error) {
     next(new AppError(error.message, 400));
@@ -161,17 +173,14 @@ exports.deleteReview = async (req, res, next) => {
   try {
     const review = await Review.findOneAndDelete({
       _id: req.params.id,
-      user: req.user._id
+      user: req.user._id,
     });
 
     if (!review) {
-      return next(new AppError('No review found with that ID or you are not authorized to delete it', 404));
+      return next(new AppError('No review found with that ID or you are not authorized', 404));
     }
 
-    res.status(204).json({
-      status: 'success',
-      data: null
-    });
+    res.status(204).json({ status: 'success', data: null });
   } catch (error) {
     next(new AppError(error.message, 400));
   }
@@ -187,9 +196,7 @@ exports.getMyReviews = async (req, res, next) => {
     res.status(200).json({
       status: 'success',
       results: reviews.length,
-      data: {
-        reviews
-      }
+      data: { reviews },
     });
   } catch (error) {
     next(new AppError(error.message, 400));
@@ -211,9 +218,7 @@ exports.markHelpful = async (req, res, next) => {
 
     res.status(200).json({
       status: 'success',
-      data: {
-        review
-      }
+      data: { review },
     });
   } catch (error) {
     next(new AppError(error.message, 400));
