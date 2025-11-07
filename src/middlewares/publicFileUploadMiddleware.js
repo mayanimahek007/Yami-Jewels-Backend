@@ -66,9 +66,11 @@ const uploadProductFiles = (req, res, next) => {
   const upload = multer({
     storage: multer.memoryStorage(), // Use memory storage initially
     limits: { 
-      fileSize: 100 * 1024 * 1024, // 100MB per file limit
+      fileSize: 100 * 1024 * 1024, // 100MB per file limit (10 images × 100MB + 1 video × 100MB = max 1.1GB total)
       fieldSize: 10 * 1024 * 1024, // 10MB for non-file fields
-      files: 11 // Maximum 10 images + 1 video
+      files: 11, // Maximum 10 images + 1 video
+      fieldNameSize: 100, // Maximum field name size
+      fields: 100 // Maximum number of non-file fields
     }
   }).fields([
     { name: 'images', maxCount: 10 },

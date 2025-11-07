@@ -14,6 +14,7 @@ const app = express();
 
 // Middleware
 app.use(cors());
+// Increase body size limits for large file uploads (product images/videos)
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ limit: '500mb', extended: true, parameterLimit: 50000 }));
 
@@ -34,6 +35,18 @@ app.get('/', (req, res) => {
 });
 // Import error handler
 const { errorHandler } = require('./utils/errorHandler');
+
+// Custom 413 error handler (for file size limits)
+app.use((err, req, res, next) => {
+  if (err.status === 413 || err.statusCode === 413 || err.code === 'LIMIT_FILE_SIZE' || err.code === 'LIMIT_FILE_COUNT') {
+    return res.status(413).json({
+      status: 'error',
+      message: 'Request entity too large. Please reduce file sizes or contact support.',
+      details: 'If using nginx, ensure client_max_body_size is set to at least 500M. See NGINX_CONFIGURATION.md for details.'
+    });
+  }
+  next(err);
+});
 
 // Error handling middleware
 app.use(errorHandler);
