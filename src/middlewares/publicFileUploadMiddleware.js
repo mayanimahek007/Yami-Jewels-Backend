@@ -62,23 +62,39 @@ const processProductFiles = (req, res, next) => {
   next();
 };
 
-// Compress image using sharp
+// Compress image using sharp with aggressive compression for large files
 const compressImage = async (buffer, originalName) => {
   try {
-    const ext = path.extname(originalName).toLowerCase();
-    const isJpeg = /\.(jpg|jpeg)$/i.test(originalName);
-    const isPng = /\.png$/i.test(originalName);
-    const isWebp = /\.webp$/i.test(originalName);
-
+    const originalSize = buffer.length;
+    const originalSizeMB = originalSize / (1024 * 1024);
+    
     let sharpInstance = sharp(buffer);
 
     // Get image metadata
     const metadata = await sharpInstance.metadata();
     const width = metadata.width;
     const height = metadata.height;
+    const format = metadata.format;
 
-    // Resize if image is too large (max 1920px on longest side, maintain aspect ratio)
-    const maxDimension = 1920;
+    // Adaptive quality based on file size - more aggressive for larger files
+    let quality = 85;
+    let maxDimension = 1920;
+    
+    if (originalSizeMB > 10) {
+      // Very large files (>10MB) - aggressive compression
+      quality = 70;
+      maxDimension = 1600;
+    } else if (originalSizeMB > 5) {
+      // Large files (5-10MB) - moderate compression
+      quality = 75;
+      maxDimension = 1800;
+    } else if (originalSizeMB > 2) {
+      // Medium files (2-5MB) - standard compression
+      quality = 80;
+      maxDimension = 1920;
+    }
+
+    // Resize if image is too large (maintain aspect ratio)
     if (width > maxDimension || height > maxDimension) {
       if (width > height) {
         sharpInstance = sharpInstance.resize(maxDimension, null, {
@@ -93,23 +109,50 @@ const compressImage = async (buffer, originalName) => {
       }
     }
 
-    // Compress based on format
-    if (isJpeg) {
-      return await sharpInstance
-        .jpeg({ quality: 85, progressive: true, mozjpeg: true })
-        .toBuffer();
-    } else if (isPng) {
-      return await sharpInstance
-        .png({ quality: 85, compressionLevel: 9, adaptiveFiltering: true })
-        .toBuffer();
-    } else if (isWebp) {
-      return await sharpInstance
-        .webp({ quality: 85, effort: 6 })
-        .toBuffer();
-    } else {
-      // For other formats (gif), just resize if needed
-      return await sharpInstance.toBuffer();
+    // Convert all images to WebP for better compression (smaller file sizes)
+    // WebP provides 25-35% better compression than JPEG/PNG
+    const compressedBuffer = await sharpInstance
+      .webp({ 
+        quality: quality, 
+        effort: 6, // Higher effort = better compression (0-6)
+        smartSubsample: true,
+        nearLossless: false
+      })
+      .toBuffer();
+
+    // If WebP conversion results in larger file, try original format with compression
+    if (compressedBuffer.length >= originalSize * 0.95) {
+      // WebP didn't help much, use original format with compression
+      // Recreate sharp instance for fallback
+      let fallbackInstance = sharp(buffer);
+      
+      // Apply resize if needed
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          fallbackInstance = fallbackInstance.resize(maxDimension, null, {
+            withoutEnlargement: true,
+            fit: 'inside'
+          });
+        } else {
+          fallbackInstance = fallbackInstance.resize(null, maxDimension, {
+            withoutEnlargement: true,
+            fit: 'inside'
+          });
+        }
+      }
+      
+      if (format === 'jpeg' || format === 'jpg') {
+        return await fallbackInstance
+          .jpeg({ quality: quality, progressive: true, mozjpeg: true })
+          .toBuffer();
+      } else if (format === 'png') {
+        return await fallbackInstance
+          .png({ quality: quality, compressionLevel: 9, adaptiveFiltering: true })
+          .toBuffer();
+      }
     }
+
+    return compressedBuffer;
   } catch (error) {
     console.error('Image compression error:', error);
     // Return original buffer if compression fails
@@ -173,28 +216,35 @@ const uploadProductFiles = (req, res, next) => {
 
               // Compress image
               const originalSize = file.buffer.length;
+              const originalSizeMB = (originalSize / (1024 * 1024)).toFixed(2);
+              
+              console.log(`Compressing image: ${file.originalname} (${originalSizeMB}MB)...`);
+              
               const compressedBuffer = await compressImage(file.buffer, file.originalname);
               const compressedSize = compressedBuffer.length;
+              const compressedSizeMB = (compressedSize / (1024 * 1024)).toFixed(2);
               
               // Log compression stats
               const compressionRatio = ((1 - compressedSize / originalSize) * 100).toFixed(1);
-              console.log(`Image ${file.originalname}: ${(originalSize / 1024).toFixed(2)}KB -> ${(compressedSize / 1024).toFixed(2)}KB (${compressionRatio}% reduction)`);
+              const sizeReductionMB = ((originalSize - compressedSize) / (1024 * 1024)).toFixed(2);
+              
+              console.log(`✓ Image compressed: ${file.originalname}`);
+              console.log(`  ${originalSizeMB}MB -> ${compressedSizeMB}MB (${compressionRatio}% reduction, saved ${sizeReductionMB}MB)`);
 
-              // Save compressed file to disk
+              // Save compressed file to disk (always save as .webp for better compression)
               const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-              // Convert to webp for better compression, or keep original format
-              const outputExt = path.extname(file.originalname).toLowerCase();
-              const filename = 'image-' + uniqueSuffix + outputExt;
+              const filename = 'image-' + uniqueSuffix + '.webp';
               const filepath = path.join(imagesDir, filename);
               
               fs.writeFileSync(filepath, compressedBuffer);
               file.buffer = compressedBuffer; // Update buffer with compressed version
               file.filename = filename; // Store the filename for later use
               file.size = compressedSize; // Update file size
+              file.mimetype = 'image/webp'; // Update mimetype to webp
             }
           }
 
-          // Process video (save as-is for now, video compression requires ffmpeg)
+          // Process video
           if (req.files.videoUrl) {
             const file = req.files.videoUrl[0];
             const allowedTypes = /mp4|mov|avi|wmv|webm/;
@@ -205,13 +255,22 @@ const uploadProductFiles = (req, res, next) => {
               return next(new AppError(`File ${file.originalname} is not a valid video. Only mp4, mov, avi, wmv, and webm are allowed.`, 400));
             }
 
-            // Save video file to disk (video compression can be added later with ffmpeg)
+            const originalSize = file.buffer.length;
+            const originalSizeMB = (originalSize / (1024 * 1024)).toFixed(2);
+            console.log(`Processing video: ${file.originalname} (${originalSizeMB}MB)`);
+            console.log(`Note: Video compression requires ffmpeg. For now, video is saved as-is.`);
+            console.log(`To enable video compression, install ffmpeg on your server.`);
+
+            // Save video file to disk
+            // Note: Video compression with ffmpeg can be added later if needed
             const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
             const filename = 'video-' + uniqueSuffix + path.extname(file.originalname);
             const filepath = path.join(videosDir, filename);
             
             fs.writeFileSync(filepath, file.buffer);
             file.filename = filename; // Store the filename for later use
+            
+            console.log(`✓ Video saved: ${filename} (${originalSizeMB}MB)`);
           }
         }
 
