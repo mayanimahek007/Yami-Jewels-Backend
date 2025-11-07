@@ -65,7 +65,11 @@ const processProductFiles = (req, res, next) => {
 const uploadProductFiles = (req, res, next) => {
   const upload = multer({
     storage: multer.memoryStorage(), // Use memory storage initially
-    limits: { fileSize: 50 * 1024 * 1024 } // 50MB total limit
+    limits: { 
+      fileSize: 100 * 1024 * 1024, // 100MB per file limit
+      fieldSize: 10 * 1024 * 1024, // 10MB for non-file fields
+      files: 11 // Maximum 10 images + 1 video
+    }
   }).fields([
     { name: 'images', maxCount: 10 },
     { name: 'videoUrl', maxCount: 1 }
@@ -73,6 +77,19 @@ const uploadProductFiles = (req, res, next) => {
 
   upload(req, res, (err) => {
     if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return next(new AppError(`File too large. Maximum file size is 100MB per file.`, 413));
+      } else if (err.code === 'LIMIT_FILE_COUNT') {
+        return next(new AppError(`Too many files. Maximum 10 images and 1 video allowed.`, 413));
+      } else if (err.code === 'LIMIT_FIELD_KEY') {
+        return next(new AppError(`Field name too long.`, 413));
+      } else if (err.code === 'LIMIT_FIELD_VALUE') {
+        return next(new AppError(`Field value too large.`, 413));
+      } else if (err.code === 'LIMIT_FIELD_COUNT') {
+        return next(new AppError(`Too many fields.`, 413));
+      } else if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        return next(new AppError(`Unexpected file field. Only 'images' and 'videoUrl' are allowed.`, 400));
+      }
       return next(new AppError(`Upload error: ${err.message}`, 400));
     } else if (err) {
       return next(new AppError(`Error uploading files: ${err.message}`, 500));
