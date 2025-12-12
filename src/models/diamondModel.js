@@ -71,6 +71,11 @@ const diamondSchema = new mongoose.Schema({
     default: "",
     trim: true
   },
+  FancyColor: {
+    type: String,
+    default: "",
+    trim: true
+  },
   Clarity: {
     type: String,
     default: "",

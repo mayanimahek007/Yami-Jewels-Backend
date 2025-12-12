@@ -21,6 +21,7 @@ exports.createDiamond = async (req, res, next) => {
       Shape,
       Weight,
       Color,
+      FancyColor,
       Clarity,
       Cut,
       Polish
@@ -61,6 +62,7 @@ exports.createDiamond = async (req, res, next) => {
       Shape: Shape || "",
       Weight: Weight || "",
       Color: Color || "",
+      fancyColor: FancyColor || "",
       Clarity: Clarity || "",
       Cut: Cut || "",
       Polish: Polish || ""
@@ -199,6 +201,7 @@ exports.getDiamondAttributes = async (req, res, next) => {
   try {
     const shapes = await Diamond.distinct('Shape');
     const colors = await Diamond.distinct('Color');
+    const fancyColors = await Diamond.distinct('FancyColor');
     const clarities = await Diamond.distinct('Clarity');
     const cuts = await Diamond.distinct('Cut');
 
@@ -227,6 +230,7 @@ exports.getDiamondAttributes = async (req, res, next) => {
       data: {
         shapes,
         colors,
+        fancyColors,
         clarities,
         cuts,
         priceRange
@@ -243,6 +247,7 @@ exports.searchDiamonds = async (req, res, next) => {
     const {
       shape,
       color,
+      fancyColor,
       clarity,
       cut,
       minPrice,
@@ -266,6 +271,10 @@ exports.searchDiamonds = async (req, res, next) => {
       query.Color = { $in: color.split(',') };
     }
 
+    // Filter by fancy color
+    if (fancyColor && fancyColor !== 'all') {
+      query.FancyColor = { $in: fancyColor.split(',') };
+    }
     // Filter by clarity
     if (clarity && clarity !== 'all') {
       query.Clarity = { $in: clarity.split(',') };
