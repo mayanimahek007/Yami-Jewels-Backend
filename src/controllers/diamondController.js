@@ -62,7 +62,7 @@ exports.createDiamond = async (req, res, next) => {
       Shape: Shape || "",
       Weight: Weight || "",
       Color: Color || "",
-      fancyColor: FancyColor || "",
+      FancyColor: FancyColor || "",
       Clarity: Clarity || "",
       Cut: Cut || "",
       Polish: Polish || ""
