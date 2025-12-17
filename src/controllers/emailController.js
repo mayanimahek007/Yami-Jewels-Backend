@@ -22,8 +22,10 @@ const sendCustomJewelryEmail = async (req, res) => {
 
     // Send email to admin/business
     await sendEmail({
-      email: process.env.ADMIN_EMAIL || 'yaamisjewels@gmail.com', // Default admin email
-      subject: `Custom Jewelry Inquiry from ${name}`,
+      from: `"${email} via" <yaamisjewels@gmail.com>`,
+  to: 'yaamisjewels@gmail.com',
+  replyTo: email, // ✅ CUSTOMER EMAIL HERE
+  subject: `Custom Jewelry Inquiry from ${name}`,
       html: `
         <h2>Custom Jewelry Inquiry</h2>
         <p><strong>Name:</strong> ${name}</p>
@@ -35,11 +37,11 @@ const sendCustomJewelryEmail = async (req, res) => {
           <div style="margin-top: 20px;">
             <h3>Reference Images:</h3>
             ${attachments.map((file, index) =>
-              `<div style="margin: 10px 0;">
+        `<div style="margin: 10px 0;">
                 <img src="cid:image${index}@yami-jewels.com" alt="${file.originalname}" style="max-width: 400px; max-height: 300px; border: 1px solid #ddd; padding: 5px;">
                 <p style="margin: 5px 0; font-size: 12px; color: #666;">${file.originalname}</p>
               </div>`
-            ).join('')}
+      ).join('')}
           </div>
         ` : ''}
       `,
@@ -48,8 +50,9 @@ const sendCustomJewelryEmail = async (req, res) => {
 
     // Send confirmation email to customer
     await sendEmail({
-      email: email,
-      subject: 'Thank you for your Custom Jewelry Inquiry',
+       from: `"Yami Jewels" <yaamisjewels@gmail.com>`,
+  to: email,
+  subject: 'Thank you for your inquiry!',
       html: `
         <h2>Thank you for your inquiry!</h2>
         <p>Dear ${name},</p>
