@@ -9,6 +9,8 @@ const diamondRoutes = require('./routes/diamondRoutes');
 const newsletterRoutes = require('./routes/newsletterRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const emailRoutes = require('./routes/emailRoutes');
+const cartRoutes = require('./routes/cartRoutes');
+const orderRoutes = require('./routes/orderRoutes');
 
 // Initialize express app
 const app = express();
@@ -30,6 +32,8 @@ app.use('/api/diamonds', diamondRoutes);
 app.use('/api/news', newsletterRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/email', emailRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
 
 // Default route
 app.get('/', (req, res) => {
