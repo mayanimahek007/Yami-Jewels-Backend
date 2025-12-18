@@ -27,7 +27,7 @@ This will create an admin user with the following credentials:
 ### Step 1: Login with an existing admin user
 
 ```bash
-curl --location 'http://localhost:5000/api/users/login' \
+curl --location 'https://dev.yaamijewels.com/api/users/login' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "email": "admin@example.com",
@@ -40,7 +40,7 @@ This will return a response with a JWT token. Copy this token for the next step.
 ### Step 2: Register a new admin user
 
 ```bash
-curl --location 'http://localhost:5000/api/users/admin/register' \
+curl --location 'https://dev.yaamijewels.com/api/users/admin/register' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' \
 --data-raw '{
@@ -69,7 +69,7 @@ npm install axios
 The `test-admin-register.js` script is already configured with default credentials. If you created a different admin user, open the script and update the login credentials to match your admin user:
 
 ```javascript
-const response = await axios.post('http://localhost:5000/api/users/login', {
+const response = await axios.post('https://dev.yaamijewels.com/api/users/login', {
   email: 'admin@example.com', // Replace with your admin user email
   password: 'adminpass123'    // Replace with your admin password
 });
@@ -129,7 +129,7 @@ If you receive an "Email already in use" error, try registering with a different
 To get a list of all users (admin only):
 
 ```bash
-curl --location 'http://localhost:5000/api/users/admin/users' \
+curl --location 'https://dev.yaamijewels.com/api/users/admin/users' \
 --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' 
 ```
 
@@ -140,7 +140,7 @@ Replace the token in the Authorization header with the actual JWT token you rece
 To register a new admin user (admin only):
 
 ```bash
-curl --location 'http://localhost:5000/api/users/admin/register' \
+curl --location 'https://dev.yaamijewels.com/api/users/admin/register' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' \
 --data-raw '{

@@ -5,7 +5,7 @@ This document provides information about the Product API endpoints and how to us
 ## Base URL
 
 ```
-http://localhost:5000/api
+https://dev.yaamijewels.com/api
 ```
 
 ## Authentication
@@ -26,7 +26,7 @@ Authorization: Bearer YOUR_JWT_TOKEN
 
 **cURL Example:**
 ```bash
-curl -X GET "http://localhost:5000/api/products" \
+curl -X GET "https://dev.yaamijewels.com/api/products" \
   -H "Content-Type: application/json"
 ```
 
@@ -44,7 +44,7 @@ curl -X GET "http://localhost:5000/api/products" \
 
 **cURL Example:**
 ```bash
-curl -X GET "http://localhost:5000/api/products/category/necklace" \
+curl -X GET "https://dev.yaamijewels.com/api/products/category/necklace" \
   -H "Content-Type: application/json"
 ```
 
@@ -56,7 +56,7 @@ curl -X GET "http://localhost:5000/api/products/category/necklace" \
 
 **cURL Example:**
 ```bash
-curl -X GET "http://localhost:5000/api/products/on-sale" \
+curl -X GET "https://dev.yaamijewels.com/api/products/on-sale" \
   -H "Content-Type: application/json"
 ```
 
@@ -68,7 +68,7 @@ curl -X GET "http://localhost:5000/api/products/on-sale" \
 
 **cURL Example:**
 ```bash
-curl -X GET "http://localhost:5000/api/products/best-seller" \
+curl -X GET "https://dev.yaamijewels.com/api/products/best-seller" \
   -H "Content-Type: application/json"
 ```
 
@@ -80,7 +80,7 @@ curl -X GET "http://localhost:5000/api/products/best-seller" \
 
 **cURL Example:**
 ```bash
-curl -X GET "http://localhost:5000/api/products/top-rated" \
+curl -X GET "https://dev.yaamijewels.com/api/products/top-rated" \
   -H "Content-Type: application/json"
 ```
 
@@ -92,7 +92,7 @@ curl -X GET "http://localhost:5000/api/products/top-rated" \
 
 **cURL Example:**
 ```bash
-curl -X GET "http://localhost:5000/api/products/60d21b4667d0d8992e610c85" \
+curl -X GET "https://dev.yaamijewels.com/api/products/60d21b4667d0d8992e610c85" \
   -H "Content-Type: application/json"
 ```
 
@@ -104,7 +104,7 @@ curl -X GET "http://localhost:5000/api/products/60d21b4667d0d8992e610c85" \
 
 **cURL Example:**
 ```bash
-curl -X POST "http://localhost:5000/api/products/admin" \
+curl -X POST "https://dev.yaamijewels.com/api/products/admin" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -F "name=Diamond Necklace" \
   -F "sku=DIAMOND-NECKLACE-001" \
@@ -138,7 +138,7 @@ curl -X POST "http://localhost:5000/api/products/admin" \
 
 **cURL Example:**
 ```bash
-curl -X PATCH "http://localhost:5000/api/products/admin/60d21b4667d0d8992e610c85" \
+curl -X PATCH "https://dev.yaamijewels.com/api/products/admin/60d21b4667d0d8992e610c85" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -155,7 +155,7 @@ curl -X PATCH "http://localhost:5000/api/products/admin/60d21b4667d0d8992e610c85
 
 **cURL Example:**
 ```bash
-curl -X DELETE "http://localhost:5000/api/products/admin/60d21b4667d0d8992e610c85" \
+curl -X DELETE "https://dev.yaamijewels.com/api/products/admin/60d21b4667d0d8992e610c85" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -169,7 +169,7 @@ curl -X DELETE "http://localhost:5000/api/products/admin/60d21b4667d0d8992e610c8
 
 **cURL Example:**
 ```bash
-curl -X POST "http://localhost:5000/api/products/wishlist" \
+curl -X POST "https://dev.yaamijewels.com/api/products/wishlist" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -185,7 +185,7 @@ curl -X POST "http://localhost:5000/api/products/wishlist" \
 
 **cURL Example:**
 ```bash
-curl -X GET "http://localhost:5000/api/products/wishlist/me" \
+curl -X GET "https://dev.yaamijewels.com/api/products/wishlist/me" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -197,7 +197,7 @@ curl -X GET "http://localhost:5000/api/products/wishlist/me" \
 
 **cURL Example:**
 ```bash
-curl -X DELETE "http://localhost:5000/api/products/wishlist/60d21b4667d0d8992e610c85" \
+curl -X DELETE "https://dev.yaamijewels.com/api/products/wishlist/60d21b4667d0d8992e610c85" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 

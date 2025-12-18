@@ -272,7 +272,7 @@ Please contact the customer to confirm the order.`;
           <h3>Order Summary</h3>
           ${order.items.map(item => `
             <div style="border-bottom: 1px solid #eee; padding: 10px 0;">
-              ${item.product.images && item.product.images[0] ? `<img src="http://localhost:5000${item.product.images[0].url}" alt="${item.product.name}" style="max-width: 250px; max-height: 250px; margin-bottom: 10px;">` : ''}
+              ${item.product.images && item.product.images[0] ? `<img src="https://dev.yaamijewels.com${item.product.images[0].url}" alt="${item.product.name}" style="max-width: 250px; max-height: 250px; margin-bottom: 10px;">` : ''}
               <p style="margin: 5px 0;"><strong>${item.product.name}</strong></p>
               <p style="margin: 5px 0;">SKU: ${item.product.sku}</p>
               <p style="margin: 5px 0;">Category: ${item.product.categoryName || 'N/A'}</p>

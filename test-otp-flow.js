@@ -1,7 +1,7 @@
 // Test script for OTP-based forgot password flow
 const axios = require('axios');
 
-const API_BASE_URL = 'http://localhost:5000/api/users';
+const API_BASE_URL = 'https://dev.yaamijewels.com/api/users';
 
 async function testOTPForgotPasswordFlow() {
   try {

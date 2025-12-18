@@ -5,7 +5,7 @@ This document provides cURL examples for all API endpoints that can be imported 
 ## Base URL
 
 ```
-http://localhost:5000/api
+https://dev.yaamijewels.com/api
 ```
 
 ## Authentication
@@ -21,7 +21,7 @@ Authorization: Bearer YOUR_JWT_TOKEN
 ### 1. Register User
 
 ```bash
-curl --location 'http://localhost:5000/api/users/register' \
+curl --location 'https://dev.yaamijewels.com/api/users/register' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "name": "Test User",
@@ -35,7 +35,7 @@ curl --location 'http://localhost:5000/api/users/register' \
 ### 2. Login User
 
 ```bash
-curl --location 'http://localhost:5000/api/users/login' \
+curl --location 'https://dev.yaamijewels.com/api/users/login' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "email": "user@example.com",
@@ -46,7 +46,7 @@ curl --location 'http://localhost:5000/api/users/login' \
 ### 3. Forgot Password
 
 ```bash
-curl --location 'http://localhost:5000/api/users/forgotPassword' \
+curl --location 'https://dev.yaamijewels.com/api/users/forgotPassword' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "email": "user@example.com"
@@ -56,7 +56,7 @@ curl --location 'http://localhost:5000/api/users/forgotPassword' \
 ### 4. Reset Password
 
 ```bash
-curl --location --request PATCH 'http://localhost:5000/api/users/resetPassword/YOUR_RESET_TOKEN' \
+curl --location --request PATCH 'https://dev.yaamijewels.com/api/users/resetPassword/YOUR_RESET_TOKEN' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "password": "newpassword123",
@@ -67,14 +67,14 @@ curl --location --request PATCH 'http://localhost:5000/api/users/resetPassword/Y
 ### 5. Get User Profile
 
 ```bash
-curl --location 'http://localhost:5000/api/users/profile' \
+curl --location 'https://dev.yaamijewels.com/api/users/profile' \
 --header 'Authorization: Bearer YOUR_JWT_TOKEN'
 ```
 
 ### 6. Update User Profile
 
 ```bash
-curl --location --request PATCH 'http://localhost:5000/api/users/updateProfile' \
+curl --location --request PATCH 'https://dev.yaamijewels.com/api/users/updateProfile' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Bearer YOUR_JWT_TOKEN' \
 --data-raw '{
@@ -87,7 +87,7 @@ curl --location --request PATCH 'http://localhost:5000/api/users/updateProfile' 
 ### 7. Update Password
 
 ```bash
-curl --location --request PATCH 'http://localhost:5000/api/users/updatePassword' \
+curl --location --request PATCH 'https://dev.yaamijewels.com/api/users/updatePassword' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Bearer YOUR_JWT_TOKEN' \
 --data-raw '{
@@ -99,14 +99,14 @@ curl --location --request PATCH 'http://localhost:5000/api/users/updatePassword'
 ### 8. Get All Users (Admin Only)
 
 ```bash
-curl --location 'http://localhost:5000/api/users/admin/users' \
+curl --location 'https://dev.yaamijewels.com/api/users/admin/users' \
 --header 'Authorization: Bearer YOUR_ADMIN_JWT_TOKEN'
 ```
 
 ### 9. Register Admin (Admin Only)
 
 ```bash
-curl --location 'http://localhost:5000/api/users/admin/register' \
+curl --location 'https://dev.yaamijewels.com/api/users/admin/register' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Bearer YOUR_ADMIN_JWT_TOKEN' \
 --data-raw '{
@@ -124,56 +124,56 @@ curl --location 'http://localhost:5000/api/users/admin/register' \
 ### 1. Get All Products
 
 ```bash
-curl --location 'http://localhost:5000/api/products' \
+curl --location 'https://dev.yaamijewels.com/api/products' \
 --header 'Content-Type: application/json'
 ```
 
 With query parameters:
 
 ```bash
-curl --location 'http://localhost:5000/api/products?categoryName=necklace&sort=-createdAt&page=1&limit=10' \
+curl --location 'https://dev.yaamijewels.com/api/products?categoryName=necklace&sort=-createdAt&page=1&limit=10' \
 --header 'Content-Type: application/json'
 ```
 
 ### 2. Get Products by Category
 
 ```bash
-curl --location 'http://localhost:5000/api/products/category/necklace' \
+curl --location 'https://dev.yaamijewels.com/api/products/category/necklace' \
 --header 'Content-Type: application/json'
 ```
 
 ### 3. Get Products on Sale
 
 ```bash
-curl --location 'http://localhost:5000/api/products/on-sale' \
+curl --location 'https://dev.yaamijewels.com/api/products/on-sale' \
 --header 'Content-Type: application/json'
 ```
 
 ### 4. Get Best Seller Products
 
 ```bash
-curl --location 'http://localhost:5000/api/products/best-seller' \
+curl --location 'https://dev.yaamijewels.com/api/products/best-seller' \
 --header 'Content-Type: application/json'
 ```
 
 ### 5. Get Top Rated Products
 
 ```bash
-curl --location 'http://localhost:5000/api/products/top-rated' \
+curl --location 'https://dev.yaamijewels.com/api/products/top-rated' \
 --header 'Content-Type: application/json'
 ```
 
 ### 6. Get Single Product
 
 ```bash
-curl --location 'http://localhost:5000/api/products/60d21b4667d0d8992e610c85' \
+curl --location 'https://dev.yaamijewels.com/api/products/60d21b4667d0d8992e610c85' \
 --header 'Content-Type: application/json'
 ```
 
 ### 7. Create Product (Admin Only)
 
 ```bash
-curl --location 'http://localhost:5000/api/products/admin' \
+curl --location 'https://dev.yaamijewels.com/api/products/admin' \
 --header 'Authorization: Bearer YOUR_ADMIN_JWT_TOKEN' \
 --form 'name="Diamond Necklace"' \
 --form 'sku="DIAMOND-NECKLACE-001"' \
@@ -202,7 +202,7 @@ curl --location 'http://localhost:5000/api/products/admin' \
 ### 8. Update Product (Admin Only)
 
 ```bash
-curl --location --request PATCH 'http://localhost:5000/api/products/admin/60d21b4667d0d8992e610c85' \
+curl --location --request PATCH 'https://dev.yaamijewels.com/api/products/admin/60d21b4667d0d8992e610c85' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Bearer YOUR_ADMIN_JWT_TOKEN' \
 --data-raw '{
@@ -214,7 +214,7 @@ curl --location --request PATCH 'http://localhost:5000/api/products/admin/60d21b
 ### 9. Delete Product (Admin Only)
 
 ```bash
-curl --location --request DELETE 'http://localhost:5000/api/products/admin/60d21b4667d0d8992e610c85' \
+curl --location --request DELETE 'https://dev.yaamijewels.com/api/products/admin/60d21b4667d0d8992e610c85' \
 --header 'Authorization: Bearer YOUR_ADMIN_JWT_TOKEN'
 ```
 
@@ -223,7 +223,7 @@ curl --location --request DELETE 'http://localhost:5000/api/products/admin/60d21
 ### 1. Add Product to Wishlist
 
 ```bash
-curl --location 'http://localhost:5000/api/products/wishlist' \
+curl --location 'https://dev.yaamijewels.com/api/products/wishlist' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Bearer YOUR_JWT_TOKEN' \
 --data-raw '{
@@ -234,14 +234,14 @@ curl --location 'http://localhost:5000/api/products/wishlist' \
 ### 2. Get User's Wishlist
 
 ```bash
-curl --location 'http://localhost:5000/api/products/wishlist/me' \
+curl --location 'https://dev.yaamijewels.com/api/products/wishlist/me' \
 --header 'Authorization: Bearer YOUR_JWT_TOKEN'
 ```
 
 ### 3. Remove Product from Wishlist
 
 ```bash
-curl --location --request DELETE 'http://localhost:5000/api/products/wishlist/60d21b4667d0d8992e610c85' \
+curl --location --request DELETE 'https://dev.yaamijewels.com/api/products/wishlist/60d21b4667d0d8992e610c85' \
 --header 'Authorization: Bearer YOUR_JWT_TOKEN'
 ```
 
@@ -260,12 +260,12 @@ This will create a new request in Postman with all the headers, parameters, and 
 
 For easier testing, create a Postman environment with the following variables:
 
-- `base_url`: http://localhost:5000/api
+- `base_url`: https://dev.yaamijewels.com/api
 - `token`: Your JWT token after login
 - `admin_token`: Your admin JWT token after admin login
 
 Then replace the hardcoded values in the requests with:
 
-- `{{base_url}}` instead of http://localhost:5000/api
+- `{{base_url}}` instead of https://dev.yaamijewels.com/api
 - `{{token}}` instead of YOUR_JWT_TOKEN
 - `{{admin_token}}` instead of YOUR_ADMIN_JWT_TOKEN
