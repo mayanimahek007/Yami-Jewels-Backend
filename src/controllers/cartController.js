@@ -36,7 +36,7 @@ const getCart = async (req, res) => {
 // Add item to cart
 const addToCart = async (req, res) => {
   try {
-    const { productId, quantity = 1, selectedMetalVariation, customizations } = req.body;
+    const { productId, quantity, selectedMetalVariation, customizations } = req.body;
 
     // Validate product exists
     const product = await Product.findById(productId);
@@ -120,14 +120,8 @@ const addToCart = async (req, res) => {
 // Update cart item
 const updateCartItem = async (req, res) => {
   try {
-    const { itemId, quantity, ringSize } = req.body;
-
-    if (quantity < 1) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Quantity must be at least 1'
-      });
-    }
+    const { itemId } = req.params;
+    const { quantity, ringSize } = req.body;
 
     const cart = await Cart.findOne({ user: req.user.id });
     if (!cart) {
@@ -142,6 +136,21 @@ const updateCartItem = async (req, res) => {
       return res.status(404).json({
         status: 'error',
         message: 'Item not found in cart'
+      });
+    }
+
+    // If quantity is 0 or less, remove the item
+    if (quantity <= 0) {
+      cart.items.pull(itemId);
+      await cart.save();
+      await cart.populate('items.product');
+      return res.status(200).json({
+        status: 'success',
+        message: 'Item removed from cart',
+        data: {
+          items: cart.items,
+          totalAmount: cart.totalAmount
+        }
       });
     }
 

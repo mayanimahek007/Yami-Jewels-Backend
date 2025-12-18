@@ -20,7 +20,7 @@ router.get('/', getCart);
 router.post('/add', addToCart);
 
 // Update cart item quantity
-router.patch('/update', updateCartItem);
+router.put('/update/:itemId', updateCartItem);
 
 // Remove item from cart
 router.delete('/remove/:itemId', removeFromCart);
