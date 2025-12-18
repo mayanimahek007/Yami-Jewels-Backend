@@ -3,7 +3,7 @@ const axios = require('axios');
 // Function to login and get token
 async function loginAndGetToken() {
   try {
-    const response = await axios.post('https://dev.yaamijewels.com/api/users/login', {
+    const response = await axios.post('http://localhost:5000/api/users/login', {
       email: 'admin@example.com', // Replace with an existing admin user
       password: 'adminpass123'    // Replace with the correct password
     });
@@ -21,7 +21,7 @@ async function getAllUsers(token) {
   try {
     console.log('Using token:', token);
     const response = await axios.get(
-      'https://dev.yaamijewels.com/api/users/admin/users',
+      'http://localhost:5000/api/users/admin/users',
       {
         headers: {
           'Authorization': `Bearer ${token}`

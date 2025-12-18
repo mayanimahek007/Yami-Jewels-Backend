@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const API_URL = 'https://dev.yaamijewels.com/api';
+const API_URL = 'http://localhost:5000/api';
 
 // Test get products on sale
 async function getOnSaleProducts() {

@@ -24,6 +24,7 @@ const orderItemSchema = new mongoose.Schema({
   customizations: {
     engraving: String,
     size: String,
+    ringSize: String,
     notes: String
   },
   price: {

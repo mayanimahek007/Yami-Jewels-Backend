@@ -120,7 +120,7 @@ const addToCart = async (req, res) => {
 // Update cart item
 const updateCartItem = async (req, res) => {
   try {
-    const { itemId, quantity } = req.body;
+    const { itemId, quantity, ringSize } = req.body;
 
     if (quantity < 1) {
       return res.status(400).json({
@@ -155,6 +155,13 @@ const updateCartItem = async (req, res) => {
     }
 
     item.quantity = quantity;
+
+    // Update ring size if provided
+    if (ringSize !== undefined) {
+      item.customizations = item.customizations || {};
+      item.customizations.ringSize = ringSize;
+    }
+
     await cart.save();
     await cart.populate('items.product');
 
