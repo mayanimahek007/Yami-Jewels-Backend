@@ -35,8 +35,7 @@ const productSchema = new mongoose.Schema({
     default: 0
   },
   regularPrice: {
-    type: Number,
-    required: [true, 'Please provide regular price']
+    type: Number
   },
   salePrice: {
     type: Number

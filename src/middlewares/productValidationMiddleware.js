@@ -17,8 +17,8 @@ exports.validateProductCreate = (req, res, next) => {
     return next(new AppError('Please provide category name', 400));
   }
 
-  // Validate prices
-  if (!regularPrice || isNaN(regularPrice) || regularPrice <= 0) {
+  // Validate prices (regularPrice is optional)
+  if (regularPrice !== undefined && regularPrice !== null && regularPrice !== '' && (isNaN(regularPrice) || regularPrice <= 0)) {
     return next(new AppError('Regular price must be a positive number', 400));
   }
 

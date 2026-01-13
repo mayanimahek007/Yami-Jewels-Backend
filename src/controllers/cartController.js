@@ -56,14 +56,20 @@ const addToCart = async (req, res) => {
     }
 
     // Calculate price based on metal variation or default
-    let itemPrice = product.regularPrice;
+    let itemPrice = product.salePrice || product.regularPrice;
+    if (!itemPrice) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Product must have either a regular price or sale price'
+      });
+    }
     if (selectedMetalVariation && product.metalVariations) {
       const variation = product.metalVariations.find(v =>
         v.type === selectedMetalVariation.type &&
         v.karat === selectedMetalVariation.karat
       );
       if (variation) {
-        itemPrice = variation.salePrice || variation.regularPrice || product.regularPrice;
+        itemPrice = variation.salePrice || variation.regularPrice || product.salePrice || product.regularPrice;
       }
     }
 
