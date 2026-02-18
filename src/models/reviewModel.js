@@ -4,7 +4,7 @@ const reviewSchema = new mongoose.Schema({
   product: {
     type: mongoose.Schema.ObjectId,
     ref: 'Product',
-    required: [true, 'Review must belong to a product']
+    required: false // Made optional to support image-only reviews
   },
   user: {
     type: mongoose.Schema.ObjectId,
@@ -15,21 +15,35 @@ const reviewSchema = new mongoose.Schema({
     type: Number,
     min: 1,
     max: 5,
-    required: [true, 'Please provide a rating']
+    required: false // Made optional to support image-only reviews
   },
   title: {
     type: String,
-    required: [true, 'Please provide a review title'],
+    required: false, // Made optional to support image-only reviews
     trim: true,
     maxlength: [100, 'Review title cannot exceed 100 characters']
   },
   comment: {
     type: String,
-    required: [true, 'Please provide a review comment'],
+    required: false, // Made optional to support image-only reviews
     trim: true,
     maxlength: [1000, 'Review comment cannot exceed 1000 characters']
   },
-  images: [String],
+  images: {
+    type: [String],
+    validate: {
+      validator: function(v) {
+        // If images exist, at least one image is required for image-only reviews
+        // For regular reviews, images are optional
+        return v.length === 0 || v.length > 0;
+      },
+      message: 'At least one image is required for image-only reviews'
+    }
+  },
+  isImageOnly: {
+    type: Boolean,
+    default: false
+  },
   verified: {
     type: Boolean,
     default: false
@@ -48,8 +62,8 @@ const reviewSchema = new mongoose.Schema({
   }
 });
 
-// Index for faster queries
-reviewSchema.index({ product: 1, user: 1 }, { unique: true });
+// Index for faster queries (only for reviews with products)
+reviewSchema.index({ product: 1, user: 1 }, { unique: true, sparse: true });
 reviewSchema.index({ product: 1, rating: 1 });
 
 // Update the updatedAt field before saving

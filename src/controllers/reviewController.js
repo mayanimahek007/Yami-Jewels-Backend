@@ -6,6 +6,38 @@ const { AppError } = require('../utils/errorHandler');
 exports.createReview = async (req, res, next) => {
   try {
     const { product, rating, title, comment } = req.body;
+    const isAdmin = req.user.role === 'admin';
+
+    // Handle uploaded images
+    let images = [];
+    if (req.files && req.files.length > 0) {
+      images = req.files.map((file) => `/images/${file.filename}`);
+    }
+
+    // Check if this is an image-only review (admin can create image-only reviews)
+    const isImageOnly = isAdmin && images.length > 0 && (!product || !rating || !title || !comment);
+
+    if (isImageOnly) {
+      // For image-only reviews, create without product, rating, title, comment
+      const newReview = await Review.create({
+        user: req.user._id,
+        images,
+        isImageOnly: true,
+      });
+
+      // Populate user data
+      await newReview.populate('user', 'name');
+
+      return res.status(201).json({
+        status: 'success',
+        data: { review: newReview },
+      });
+    }
+
+    // Regular review validation
+    if (!product) {
+      return next(new AppError('Please provide a product ID', 400));
+    }
 
     // Check if product exists
     const productExists = await Product.findById(product);
@@ -13,19 +45,13 @@ exports.createReview = async (req, res, next) => {
       return next(new AppError('No product found with that ID', 404));
     }
 
-    // Check if user already reviewed this product
+    // Check if user already reviewed this product (only for regular reviews)
     const existingReview = await Review.findOne({
       product,
       user: req.user._id,
     });
     if (existingReview) {
       return next(new AppError('You have already reviewed this product', 400));
-    }
-
-    // Handle uploaded images
-    let images = [];
-    if (req.files && req.files.length > 0) {
-      images = req.files.map((file) => `/images/${file.filename}`);
     }
 
     // Create new review
@@ -36,6 +62,7 @@ exports.createReview = async (req, res, next) => {
       title,
       comment,
       images,
+      isImageOnly: false,
     });
 
     // Populate user data
