@@ -2,6 +2,7 @@ const Order = require('../models/orderModel');
 const Cart = require('../models/cartModel');
 const Product = require('../models/productModel');
 const User = require('../models/userModel');
+const Coupon = require('../models/couponModel');
 const sendEmail = require('../utils/emailService');
 const sendWhatsAppMessage = require('../utils/whatsappService');
 const { AppError } = require('../utils/errorHandler');
@@ -65,7 +66,8 @@ const createOrder = async (req, res) => {
     const {
       shippingAddress,
       paymentMethod = 'Cash on Delivery',
-      orderNotes
+      orderNotes,
+      couponCode
     } = req.body;
 
     // Validate required fields
@@ -109,13 +111,64 @@ const createOrder = async (req, res) => {
     }));
 
     // Calculate total amount
-    const totalAmount = orderItems.reduce((total, item) => total + item.total, 0);
+    const totalBeforeDiscount = orderItems.reduce((total, item) => total + item.total, 0);
+    let totalAmount = totalBeforeDiscount;
+    let discountAmount = 0;
+    let appliedCouponCode;
+
+    if (couponCode) {
+      const coupon = await Coupon.findOne({ code: String(couponCode).toUpperCase(), isActive: true });
+
+      if (!coupon) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Invalid coupon code'
+        });
+      }
+
+      if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Coupon has expired'
+        });
+      }
+
+      if (coupon.usageLimit > 0 && coupon.usedCount >= coupon.usageLimit) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Coupon usage limit reached'
+        });
+      }
+
+      if (totalBeforeDiscount < coupon.minOrderAmount) {
+        return res.status(400).json({
+          status: 'error',
+          message: `Minimum order amount is ${coupon.minOrderAmount}`
+        });
+      }
+
+      discountAmount = coupon.discountType === 'percentage'
+        ? (totalBeforeDiscount * coupon.discountValue) / 100
+        : coupon.discountValue;
+
+      if (coupon.maxDiscountAmount > 0) {
+        discountAmount = Math.min(discountAmount, coupon.maxDiscountAmount);
+      }
+
+      totalAmount = Math.max(totalBeforeDiscount - discountAmount, 0);
+      appliedCouponCode = coupon.code;
+      coupon.usedCount += 1;
+      await coupon.save();
+    }
 
     // Create order
     const order = new Order({
       user: req.user.id,
       items: orderItems,
       totalAmount,
+      totalBeforeDiscount,
+      couponCode: appliedCouponCode,
+      discountAmount,
       shippingAddress,
       paymentMethod,
       orderNotes

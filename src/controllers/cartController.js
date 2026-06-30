@@ -2,6 +2,24 @@ const Cart = require('../models/cartModel');
 const Product = require('../models/productModel');
 const { AppError } = require('../utils/errorHandler');
 
+const getItemPrice = (product, selectedMetalVariation) => {
+  let itemPrice = product.salePrice || product.regularPrice;
+
+  if (selectedMetalVariation && product.metalVariations) {
+    const variation = product.metalVariations.find(v =>
+      v.type === selectedMetalVariation.type &&
+      v.color === selectedMetalVariation.color &&
+      v.karat === selectedMetalVariation.karat
+    );
+
+    if (variation) {
+      itemPrice = variation.salePrice || variation.regularPrice || product.salePrice || product.regularPrice;
+    }
+  }
+
+  return itemPrice;
+};
+
 // Get user's cart
 const getCart = async (req, res) => {
   try {
@@ -15,6 +33,22 @@ const getCart = async (req, res) => {
           totalAmount: 0
         }
       });
+    }
+
+    let priceChanged = false;
+    cart.items.forEach((item) => {
+      if (item.product) {
+        const currentPrice = getItemPrice(item.product, item.selectedMetalVariation);
+        if (currentPrice && item.price !== currentPrice) {
+          item.price = currentPrice;
+          priceChanged = true;
+        }
+      }
+    });
+
+    if (priceChanged) {
+      await cart.save();
+      await cart.populate('items.product');
     }
 
     res.status(200).json({
@@ -55,24 +89,14 @@ const addToCart = async (req, res) => {
       });
     }
 
-    // Calculate price based on metal variation or default
-    let itemPrice = product.salePrice || product.regularPrice;
+    // Calculate price based on exact metal variation or default
+    let itemPrice = getItemPrice(product, selectedMetalVariation);
     if (!itemPrice) {
       return res.status(400).json({
         status: 'error',
         message: 'Product must have either a regular price or sale price'
       });
     }
-    if (selectedMetalVariation && product.metalVariations) {
-      const variation = product.metalVariations.find(v =>
-        v.type === selectedMetalVariation.type &&
-        v.karat === selectedMetalVariation.karat
-      );
-      if (variation) {
-        itemPrice = variation.salePrice || variation.regularPrice || product.salePrice || product.regularPrice;
-      }
-    }
-
     // Find or create cart
     let cart = await Cart.findOne({ user: req.user.id });
 

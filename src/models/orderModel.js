@@ -88,6 +88,19 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  totalBeforeDiscount: {
+    type: Number,
+    default: 0
+  },
+  couponCode: {
+    type: String,
+    uppercase: true,
+    trim: true
+  },
+  discountAmount: {
+    type: Number,
+    default: 0
+  },
   shippingAddress: shippingAddressSchema,
   paymentMethod: {
     type: String,
