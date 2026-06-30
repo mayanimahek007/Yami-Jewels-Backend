@@ -13,6 +13,7 @@ router.use(authMiddleware.restrictTo('admin'));
 router.get('/admin', faqController.getAllFAQs);
 router.get('/admin/:id', faqController.getFAQ);
 router.post('/admin', faqController.createFAQ);
+router.patch('/admin/:id/answer', faqController.answerFAQ);
 router.patch('/admin/:id', faqController.updateFAQ);
 router.delete('/admin/:id', faqController.deleteFAQ);
 
