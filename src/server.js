@@ -11,6 +11,7 @@ const reviewRoutes = require('./routes/reviewRoutes');
 const emailRoutes = require('./routes/emailRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const faqRoutes = require('./routes/faqRoutes');
 
 // Initialize express app
 const app = express();
@@ -34,6 +35,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/faqs', faqRoutes);
 
 // Default route
 app.get('/', (req, res) => {
