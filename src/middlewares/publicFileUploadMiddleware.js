@@ -22,9 +22,15 @@ if (!fs.existsSync(videosDir)) {
 
 // Process uploaded files and format them for the database
 const processProductFiles = (req, res, next) => {
+  const filesByField = (req.files || []).reduce((acc, file) => {
+    if (!acc[file.fieldname]) acc[file.fieldname] = [];
+    acc[file.fieldname].push(file);
+    return acc;
+  }, {});
+
   // Process images
-  if (req.files && req.files.images) {
-    const images = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
+  if (filesByField.images) {
+    const images = filesByField.images;
     req.body.images = images.map((file, index) => {
       const alt = req.body[`images[${index}][alt]`] || `${req.body.name || 'Product'} Image ${index + 1}`;
       return {
@@ -35,8 +41,36 @@ const processProductFiles = (req, res, next) => {
   }
 
   // Process video
-  if (req.files && req.files.videoUrl) {
-    req.body.videoUrl = `/public/videos/${req.files.videoUrl[0].filename}`;
+  if (filesByField.videoUrl) {
+    req.body.videoUrl = `/public/videos/${filesByField.videoUrl[0].filename}`;
+  }
+
+  req.body.variationImages = {};
+  req.body.variationVideoUrls = {};
+
+  Object.entries(filesByField).forEach(([fieldName, files]) => {
+    const imageMatch = fieldName.match(/^variationImages\[(\d+)\]$/);
+    const videoMatch = fieldName.match(/^variationVideo\[(\d+)\]$/);
+
+    if (imageMatch) {
+      const variationIndex = imageMatch[1];
+      req.body.variationImages[variationIndex] = files.map((file, index) => ({
+        url: `/public/images/${file.filename}`,
+        alt: req.body.name ? `${req.body.name} Variation ${Number(variationIndex) + 1} Image ${index + 1}` : `Variation ${Number(variationIndex) + 1} Image ${index + 1}`
+      }));
+    }
+
+    if (videoMatch) {
+      req.body.variationVideoUrls[videoMatch[1]] = `/public/videos/${files[0].filename}`;
+    }
+  });
+
+  if (Object.keys(req.body.variationImages).length === 0) {
+    delete req.body.variationImages;
+  }
+
+  if (Object.keys(req.body.variationVideoUrls).length === 0) {
+    delete req.body.variationVideoUrls;
   }
 
   // Process metal variations
@@ -49,7 +83,11 @@ const processProductFiles = (req, res, next) => {
         type: req.body[`metalVariations[${index}][type]`],
         color: req.body[`metalVariations[${index}][color]`],
         karat: req.body[`metalVariations[${index}][karat]`],
-        additionalInfo: req.body[`metalVariations[${index}][additionalInfo]`]
+        regularPrice: req.body[`metalVariations[${index}][regularPrice]`],
+        salePrice: req.body[`metalVariations[${index}][salePrice]`],
+        additionalInfo: req.body[`metalVariations[${index}][additionalInfo]`],
+        existingImages: req.body[`metalVariations[${index}][existingImages]`],
+        existingVideoUrl: req.body[`metalVariations[${index}][existingVideoUrl]`]
       };
       
       metalVariations.push(variation);
@@ -167,14 +205,11 @@ const uploadProductFiles = (req, res, next) => {
     limits: { 
       fileSize: 100 * 1024 * 1024, // 100MB per file limit (10 images × 100MB + 1 video × 100MB = max 1.1GB total)
       fieldSize: 10 * 1024 * 1024, // 10MB for non-file fields
-      files: 11, // Maximum 10 images + 1 video
+      files: 60,
       fieldNameSize: 100, // Maximum field name size
       fields: 100 // Maximum number of non-file fields
     }
-  }).fields([
-    { name: 'images', maxCount: 10 },
-    { name: 'videoUrl', maxCount: 1 }
-  ]);
+  }).any();
 
   upload(req, res, (err) => {
     if (err instanceof multer.MulterError) {
@@ -199,10 +234,11 @@ const uploadProductFiles = (req, res, next) => {
     // Process files asynchronously with compression
     (async () => {
       try {
-        if (req.files) {
+        if (req.files && req.files.length > 0) {
           // Process images with compression
-          if (req.files.images) {
-            const images = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
+          const imageFiles = req.files.filter((file) => file.fieldname === 'images' || /^variationImages\[\d+\]$/.test(file.fieldname));
+          if (imageFiles.length > 0) {
+            const images = imageFiles;
             
             // Validate and compress images
             for (const file of images) {
@@ -245,8 +281,9 @@ const uploadProductFiles = (req, res, next) => {
           }
 
           // Process video
-          if (req.files.videoUrl) {
-            const file = req.files.videoUrl[0];
+          const videoFiles = req.files.filter((file) => file.fieldname === 'videoUrl' || /^variationVideo\[\d+\]$/.test(file.fieldname));
+          if (videoFiles.length > 0) {
+            for (const file of videoFiles) {
             const allowedTypes = /mp4|mov|avi|wmv|webm/;
             const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
             const mimetype = /video\/.*/i.test(file.mimetype);
@@ -271,6 +308,7 @@ const uploadProductFiles = (req, res, next) => {
             file.filename = filename; // Store the filename for later use
             
             console.log(`✓ Video saved: ${filename} (${originalSizeMB}MB)`);
+            }
           }
         }
 

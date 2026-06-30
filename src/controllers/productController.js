@@ -20,6 +20,23 @@ const parseExistingImages = (existingImages) => {
   }
 };
 
+const normalizeVariation = (variation, index, body) => {
+  const existingImages = parseExistingImages(variation.existingImages);
+  const uploadedImages = body.variationImages?.[index] || [];
+  const videoUrl = body.variationVideoUrls?.[index] || variation.existingVideoUrl || variation.videoUrl;
+
+  return {
+    type: variation.type,
+    color: variation.color,
+    karat: variation.karat,
+    regularPrice: toNumberOrUndefined(variation.regularPrice),
+    salePrice: toNumberOrUndefined(variation.salePrice),
+    additionalInfo: variation.additionalInfo,
+    images: [...existingImages, ...uploadedImages],
+    videoUrl
+  };
+};
+
 const buildProductPayload = (body, currentProduct = null) => {
   const payload = {
     name: body.name,
@@ -32,7 +49,9 @@ const buildProductPayload = (body, currentProduct = null) => {
     discount: toNumberOrUndefined(body.discount) || 0,
     bestSeller: toBoolean(body.bestSeller),
     topProduct: toBoolean(body.topProduct),
-    metalVariations: body.metalVariations,
+    metalVariations: Array.isArray(body.metalVariations)
+      ? body.metalVariations.map((variation, index) => normalizeVariation(variation, index, body))
+      : body.metalVariations,
     videoUrl: body.videoUrl || body.existingVideoUrl,
     description: body.description
   };

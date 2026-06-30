@@ -22,7 +22,7 @@ exports.validateProductCreate = (req, res, next) => {
     return next(new AppError('Regular price must be a positive number', 400));
   }
 
-  if (req.body.salePrice !== undefined && (isNaN(req.body.salePrice) || req.body.salePrice <= 0)) {
+  if (req.body.salePrice !== undefined && req.body.salePrice !== null && req.body.salePrice !== '' && (isNaN(req.body.salePrice) || req.body.salePrice <= 0)) {
     return next(new AppError('Sale price must be a positive number', 400));
   }
 
@@ -43,11 +43,11 @@ exports.validateProductCreate = (req, res, next) => {
       }
       
       // Validate metal variation prices if provided
-      if (variation.regularPrice !== undefined && (isNaN(variation.regularPrice) || variation.regularPrice <= 0)) {
+      if (variation.regularPrice !== undefined && variation.regularPrice !== null && variation.regularPrice !== '' && (isNaN(variation.regularPrice) || variation.regularPrice <= 0)) {
         return next(new AppError('Metal variation regular price must be a positive number', 400));
       }
       
-      if (variation.salePrice !== undefined && (isNaN(variation.salePrice) || variation.salePrice <= 0)) {
+      if (variation.salePrice !== undefined && variation.salePrice !== null && variation.salePrice !== '' && (isNaN(variation.salePrice) || variation.salePrice <= 0)) {
         return next(new AppError('Metal variation sale price must be a positive number', 400));
       }
     }
@@ -63,11 +63,11 @@ exports.validateProductUpdate = (req, res, next) => {
   const { regularPrice, salePrice, stock } = req.body;
 
   // Validate prices if provided
-  if (regularPrice !== undefined && (isNaN(regularPrice) || regularPrice <= 0)) {
+  if (regularPrice !== undefined && regularPrice !== null && regularPrice !== '' && (isNaN(regularPrice) || regularPrice <= 0)) {
     return next(new AppError('Regular price must be a positive number', 400));
   }
 
-  if (salePrice !== undefined && (isNaN(salePrice) || salePrice <= 0)) {
+  if (salePrice !== undefined && salePrice !== null && salePrice !== '' && (isNaN(salePrice) || salePrice <= 0)) {
     return next(new AppError('Sale price must be a positive number', 400));
   }
 
@@ -88,11 +88,11 @@ exports.validateProductUpdate = (req, res, next) => {
       }
       
       // Validate metal variation prices if provided
-      if (variation.regularPrice !== undefined && (isNaN(variation.regularPrice) || variation.regularPrice <= 0)) {
+      if (variation.regularPrice !== undefined && variation.regularPrice !== null && variation.regularPrice !== '' && (isNaN(variation.regularPrice) || variation.regularPrice <= 0)) {
         return next(new AppError('Metal variation regular price must be a positive number', 400));
       }
       
-      if (variation.salePrice !== undefined && (isNaN(variation.salePrice) || variation.salePrice <= 0)) {
+      if (variation.salePrice !== undefined && variation.salePrice !== null && variation.salePrice !== '' && (isNaN(variation.salePrice) || variation.salePrice <= 0)) {
         return next(new AppError('Metal variation sale price must be a positive number', 400));
       }
     }

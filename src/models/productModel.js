@@ -57,7 +57,15 @@ const productSchema = new mongoose.Schema({
     salePrice: {
       type: Number
     },
-    additionalInfo: String
+    additionalInfo: String,
+    images: [{
+      url: {
+        type: String,
+        required: false
+      },
+      alt: String
+    }],
+    videoUrl: String
   }],
   images: [{
     url: {
