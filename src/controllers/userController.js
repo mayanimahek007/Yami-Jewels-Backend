@@ -1,4 +1,5 @@
 const User = require('../models/userModel');
+const Order = require('../models/orderModel');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const sendEmail = require('../utils/emailService');
@@ -345,13 +346,32 @@ exports.logout = (req, res) => {
 // Get all users (admin only)
 exports.getAllUsers = async (req, res, next) => {
   try {
-    const users = await User.find();
+    const users = await User.find().select('-password').lean();
+    const userIds = users.map((user) => user._id);
+    const orders = await Order.find({ user: { $in: userIds } })
+      .populate('items.product', 'name sku images')
+      .sort('-createdAt')
+      .lean();
+
+    const ordersByUser = orders.reduce((acc, order) => {
+      const userId = order.user.toString();
+      if (!acc[userId]) acc[userId] = [];
+      acc[userId].push(order);
+      return acc;
+    }, {});
+
+    const usersWithOrders = users.map((user) => ({
+      ...user,
+      orders: ordersByUser[user._id.toString()] || [],
+      ordersCount: (ordersByUser[user._id.toString()] || []).length,
+      totalSpent: (ordersByUser[user._id.toString()] || []).reduce((sum, order) => sum + (order.totalAmount || 0), 0)
+    }));
 
     res.status(200).json({
       status: 'success',
-      results: users.length,
+      results: usersWithOrders.length,
       data: {
-        users
+        users: usersWithOrders
       }
     });
   } catch (error) {

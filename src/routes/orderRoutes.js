@@ -6,7 +6,7 @@ const {
   updateOrderStatus,
   getAllOrders
 } = require('../controllers/orderController');
-const { protect } = require('../middlewares/authMiddleware');
+const { protect, restrictTo } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
@@ -16,6 +16,9 @@ router.use(protect);
 // Get user's orders
 router.get('/', getUserOrders);
 
+// Get all orders (Admin only)
+router.get('/admin/all', restrictTo('admin'), getAllOrders);
+
 // Get specific order by ID
 router.get('/:id', getOrderById);
 
@@ -23,9 +26,6 @@ router.get('/:id', getOrderById);
 router.post('/', createOrder);
 
 // Update order status (Admin only)
-router.patch('/:id/status', updateOrderStatus);
-
-// Get all orders (Admin only)
-router.get('/admin/all', getAllOrders);
+router.patch('/:id/status', restrictTo('admin'), updateOrderStatus);
 
 module.exports = router;

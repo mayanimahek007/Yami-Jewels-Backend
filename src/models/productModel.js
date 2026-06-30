@@ -29,6 +29,10 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  topProduct: {
+    type: Boolean,
+    default: false
+  },
   stock: {
     type: Number,
     required: [true, 'Please provide stock quantity'],

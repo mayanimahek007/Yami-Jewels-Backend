@@ -11,6 +11,7 @@ router.get('/', productController.getAllProducts);
 router.get('/category/:categoryName', productController.getProductsByCategory);
 router.get('/on-sale', productController.getOnSaleProducts);
 router.get('/best-seller', productController.getBestSellerProducts);
+router.get('/top-products', productController.getTopProductProducts);
 router.get('/top-rated', productController.getTopRatedProducts);
 router.get('/:id', productController.getProduct);
 

@@ -2,37 +2,62 @@ const Product = require('../models/productModel');
 const Wishlist = require('../models/wishlistModel');
 const { AppError } = require('../utils/errorHandler');
 
+const toBoolean = (value) => value === true || value === 'true' || value === 'on';
+const toNumberOrUndefined = (value) => {
+  if (value === undefined || value === null || value === '') return undefined;
+  return Number(value);
+};
+
+const parseExistingImages = (existingImages) => {
+  if (!existingImages) return [];
+  if (Array.isArray(existingImages)) return existingImages;
+
+  try {
+    const parsed = JSON.parse(existingImages);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return [];
+  }
+};
+
+const buildProductPayload = (body, currentProduct = null) => {
+  const payload = {
+    name: body.name,
+    sku: body.sku,
+    categoryName: body.categoryName,
+    size: body.size,
+    stock: toNumberOrUndefined(body.stock),
+    regularPrice: toNumberOrUndefined(body.regularPrice),
+    salePrice: toNumberOrUndefined(body.salePrice),
+    discount: toNumberOrUndefined(body.discount) || 0,
+    bestSeller: toBoolean(body.bestSeller),
+    topProduct: toBoolean(body.topProduct),
+    metalVariations: body.metalVariations,
+    videoUrl: body.videoUrl || body.existingVideoUrl,
+    description: body.description
+  };
+
+  if (currentProduct) {
+    const keptImages = body.existingImages
+      ? parseExistingImages(body.existingImages)
+      : currentProduct.images || [];
+    payload.images = [...keptImages, ...(body.images || [])];
+  } else {
+    payload.images = body.images || [];
+  }
+
+  Object.keys(payload).forEach((key) => {
+    if (payload[key] === undefined) delete payload[key];
+  });
+
+  return payload;
+};
+
 // Create a new product
 exports.createProduct = async (req, res, next) => {
   try {
-    const {
-      name,
-      sku,
-      categoryName,
-      size,
-      stock,
-      regularPrice,
-      salePrice,
-      metalVariations,
-      images,
-      videoUrl,
-      description
-    } = req.body;
-
     // Create new product
-    const newProduct = await Product.create({
-      name,
-      sku,
-      categoryName,
-      size,
-      stock,
-      regularPrice,
-      salePrice,
-      metalVariations,
-      images,
-      videoUrl,
-      description
-    });
+    const newProduct = await Product.create(buildProductPayload(req.body));
 
     res.status(201).json({
       status: 'success',
@@ -237,29 +262,19 @@ exports.getBestSellerProducts = async (req, res, next) => {
   }
 };
 
-// Get top rated products (highest salePrice + regularPrice)
-exports.getTopRatedProducts = async (req, res, next) => {
+// Get top product showcase products
+exports.getTopProductProducts = async (req, res, next) => {
   try {
-    // Products sorted by (salePrice + regularPrice) descending, top 20
-    const products = await Product.aggregate([
-      {
-        $addFields: {
-          totalPrice: { $add: [
-            { $ifNull: ["$salePrice", 0] },
-            { $ifNull: ["$regularPrice", 0] }
-          ] }
-        }
-      },
-      { $sort: { totalPrice: -1 } },
-      { $limit: 20 }
-    ]);
+    const products = await Product.find({ topProduct: true }).sort('-createdAt').limit(20);
+
     // Add isWishlisted if user is logged in
     if (req.user) {
       const userWishlist = await Wishlist.find({ user: req.user._id });
       const wishlistedProductIds = userWishlist.map(item => item.product.toString());
       const productsWithWishlist = products.map(product => {
-        product.isWishlisted = wishlistedProductIds.includes(product._id.toString());
-        return product;
+        const productObj = product.toObject();
+        productObj.isWishlisted = wishlistedProductIds.includes(product._id.toString());
+        return productObj;
       });
       return res.status(200).json({
         status: 'success',
@@ -276,6 +291,8 @@ exports.getTopRatedProducts = async (req, res, next) => {
     next(new AppError(error.message, 400));
   }
 };
+
+exports.getTopRatedProducts = exports.getTopProductProducts;
 
 // Get a single product
 exports.getProduct = async (req, res, next) => {
@@ -328,14 +345,16 @@ exports.getProduct = async (req, res, next) => {
 // Update a product
 exports.updateProduct = async (req, res, next) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+    const currentProduct = await Product.findById(req.params.id);
+
+    if (!currentProduct) {
+      return next(new AppError('No product found with that ID', 404));
+    }
+
+    const product = await Product.findByIdAndUpdate(req.params.id, buildProductPayload(req.body, currentProduct), {
       new: true,
       runValidators: true
     });
-
-    if (!product) {
-      return next(new AppError('No product found with that ID', 404));
-    }
 
     res.status(200).json({
       status: 'success',
