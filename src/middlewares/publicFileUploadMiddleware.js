@@ -87,7 +87,10 @@ const processProductFiles = (req, res, next) => {
         salePrice: req.body[`metalVariations[${index}][salePrice]`],
         additionalInfo: req.body[`metalVariations[${index}][additionalInfo]`],
         existingImages: req.body[`metalVariations[${index}][existingImages]`],
-        existingVideoUrl: req.body[`metalVariations[${index}][existingVideoUrl]`]
+        existingVideoUrl: req.body[`metalVariations[${index}][existingVideoUrl]`],
+        imageUrls: req.body[`metalVariations[${index}][imageUrls]`],
+        videoUrl: req.body[`metalVariations[${index}][videoUrl]`],
+        externalVideoUrl: req.body[`metalVariations[${index}][externalVideoUrl]`]
       };
       
       metalVariations.push(variation);

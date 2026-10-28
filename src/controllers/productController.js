@@ -20,10 +20,62 @@ const parseExistingImages = (existingImages) => {
   }
 };
 
+const isHttpUrl = (value) => typeof value === 'string' && /^https?:\/\//i.test(value.trim());
+
+const parseMediaUrlList = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value.flatMap(parseMediaUrlList);
+  }
+  if (typeof value !== 'string') return [];
+
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+
+  if (trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      return Array.isArray(parsed) ? parsed.flatMap(parseMediaUrlList) : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  return trimmed
+    .split(/[\n,]+/)
+    .map((url) => url.trim())
+    .filter(isHttpUrl);
+};
+
+const toImageObjects = (urls, name, prefix = 'Image') =>
+  urls.map((url, index) => ({
+    url: url.trim(),
+    alt: `${name || 'Product'} ${prefix} ${index + 1}`
+  }));
+
+const resolveVideoUrl = (...candidates) => {
+  for (const candidate of candidates) {
+    if (!candidate || typeof candidate !== 'string') continue;
+    const value = candidate.trim();
+    if (value) return value;
+  }
+  return undefined;
+};
+
 const normalizeVariation = (variation, index, body) => {
   const existingImages = parseExistingImages(variation.existingImages);
   const uploadedImages = body.variationImages?.[index] || [];
-  const videoUrl = body.variationVideoUrls?.[index] || variation.existingVideoUrl || variation.videoUrl;
+  const urlImages = toImageObjects(
+    parseMediaUrlList(variation.imageUrls || body[`metalVariations[${index}][imageUrls]`]),
+    body.name,
+    `Variation ${index + 1} Image`
+  );
+  const videoUrl = resolveVideoUrl(
+    body.variationVideoUrls?.[index],
+    variation.existingVideoUrl,
+    variation.videoUrl,
+    variation.externalVideoUrl
+  );
 
   return {
     type: variation.type,
@@ -32,7 +84,7 @@ const normalizeVariation = (variation, index, body) => {
     regularPrice: toNumberOrUndefined(variation.regularPrice),
     salePrice: toNumberOrUndefined(variation.salePrice),
     additionalInfo: variation.additionalInfo,
-    images: [...existingImages, ...uploadedImages],
+    images: [...existingImages, ...uploadedImages, ...urlImages],
     videoUrl
   };
 };
@@ -52,18 +104,23 @@ const buildProductPayload = (body, currentProduct = null) => {
     metalVariations: Array.isArray(body.metalVariations)
       ? body.metalVariations.map((variation, index) => normalizeVariation(variation, index, body))
       : body.metalVariations,
-    videoUrl: body.videoUrl || body.existingVideoUrl,
+    videoUrl: resolveVideoUrl(
+      typeof body.videoUrl === 'string' && (body.videoUrl.startsWith('/public/') || isHttpUrl(body.videoUrl))
+        ? body.videoUrl
+        : undefined,
+      body.externalVideoUrl,
+      body.existingVideoUrl
+    ) ?? (body.existingVideoUrl === '' ? '' : undefined),
     description: body.description
   };
 
-  if (currentProduct) {
-    const keptImages = body.existingImages
-      ? parseExistingImages(body.existingImages)
-      : currentProduct.images || [];
-    payload.images = [...keptImages, ...(body.images || [])];
-  } else {
-    payload.images = body.images || [];
-  }
+  const keptImages = body.existingImages
+    ? parseExistingImages(body.existingImages)
+    : currentProduct?.images || [];
+  const uploadedImages = body.images || [];
+  const urlImages = toImageObjects(parseMediaUrlList(body.imageUrls), body.name);
+
+  payload.images = [...keptImages, ...uploadedImages, ...urlImages];
 
   Object.keys(payload).forEach((key) => {
     if (payload[key] === undefined) delete payload[key];
